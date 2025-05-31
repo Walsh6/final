@@ -1,0 +1,60 @@
+
+# Windows Makefile for RTX 3060 Bitcoin Wallet Generator
+# Use with nmake from Visual Studio Developer Command Prompt
+
+NVCC = nvcc
+NVCCFLAGS = -std=c++14 -O3 -arch=sm_86 --ptxas-options=-v -DWIN32_LEAN_AND_MEAN -DCURL_STATICLIB
+LIBS = curl\lib\libcurl.dll.a advapi32.lib crypt32.lib wldap32.lib normaliz.lib ws2_32.lib curand.lib cudart.lib
+
+# Use system libraries - no vcpkg needed
+INCLUDE_DIRS = -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.3\include"
+LIB_DIRS = -L"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.3\lib\x64"
+
+# Source files
+CUDA_SOURCES = gpu_accelerated.cu
+CPP_SOURCES = main.cpp offline_checker.cpp
+TARGET = walletgen.exe
+
+# Default target
+all: check-deps download-curl $(TARGET)
+
+# Check dependencies
+check-deps:
+	@where nvcc >nul 2>&1 || (echo ERROR: CUDA not found. Install CUDA Toolkit 12.3 && exit /b 1)
+	@where cl >nul 2>&1 || (echo ERROR: Visual Studio not found. Install Visual Studio Build Tools && exit /b 1)
+	@echo Dependencies check passed
+
+# Download and setup curl for Windows
+download-curl:
+	@if not exist "curl" (
+		echo Downloading curl for Windows...
+		powershell -Command "Invoke-WebRequest -Uri 'https://curl.se/windows/dl-8.11.0_1/curl-8.11.0_1-win64-mingw.zip' -OutFile 'curl.zip'"
+		powershell -Command "Expand-Archive -Path 'curl.zip' -DestinationPath '.'"
+		ren curl-8.11.0_1-win64-mingw curl
+		del curl.zip
+		echo Checking curl library files...
+		dir curl\lib
+	)
+
+# Build target
+$(TARGET): $(CPP_SOURCES) $(CUDA_SOURCES) gpu_accelerated.h offline_checker.h
+	$(NVCC) $(NVCCFLAGS) $(INCLUDE_DIRS) $(LIB_DIRS) -I"curl\include" -L"curl\lib" $(CPP_SOURCES) $(CUDA_SOURCES) $(LIBS) -o $(TARGET)
+	@echo Build completed: $(TARGET)
+	@echo Copy curl DLL to current directory
+	@copy "curl\bin\libcurl-x64.dll" . >nul 2>&1 || echo Note: libcurl DLL not found, you may need to install curl manually
+
+# Clean
+clean:
+	@if exist *.obj del *.obj
+	@if exist *.exp del *.exp
+	@if exist *.lib del *.lib
+	@if exist $(TARGET) del $(TARGET)
+	@if exist curl.zip del curl.zip
+	@echo Cleaned build files
+
+# Test GPU
+test-gpu:
+	nvidia-smi
+	@echo GPU test completed
+
+.PHONY: all clean check-deps test-gpu download-curl

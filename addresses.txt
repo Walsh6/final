@@ -1,0 +1,15 @@
+
+# Sample addresses file for offline checking
+# Add your Bitcoin and Ethereum addresses here, one per line
+# Bitcoin addresses (Legacy, P2SH, Bech32)
+1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa
+3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy
+bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
+
+# Ethereum addresses (with or without 0x prefix)
+0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045
+0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed
+d8dA6BF26964aF9D7eEd9e03E53415D37aA96045
+
+# Comments start with #
+# Mixed case addresses are supported for Ethereum
